@@ -1,61 +1,57 @@
-from mesa import Agent, Model
-from mesa.time import RandomActivation
-import random
-import numpy as np
-
-# -	Simulate traders with different trading strategies for portfolio optimisation
-
-class Traders(Agent):
-    """ [1] - Initialising Variables """
-    def __init__(self, trader_ID: int, model: str, strategy: str, initial_funds: float = 10000, 
-                 initial_shares: float = 0):
-        super().__init__(trader_ID, model)
-        self.strategy = strategy # Trading Strategy
-        self.funds = initial_funds # Initial Money for Investment
-        self.shares = initial_shares # Initially holds no stock
-
-        # Initial Portfolio Value
-        self.portfolio_value = self.funds 
-    
-    
-    """ [2] - Trading Strategies"""
-    # Random Trading
-    def random_trade(self):
-        # Agent Randomly chooses to buy, hold or sell a stock
-        trade_decisions = ["buy", "hold", "sell"] 
-        agents_decision = random.choice(trade_decisions)
-
-        #if agents_decision == "buy" and self.funds >=
-    
-    # SMA Trading
-    def sma_trade(self):
-        pass
-    
-    # Machine Learning Trading
-    def ml_trade(self):
-        pass
-    
-    """ [3] - Updating the Value of the Portfolio """
-    def update_portfolio(self):
-        self.portfolio_value = self.funds + (self.shares * self.model.market.price)
-    
+from mesa.discrete_space import FixedAgent
+from random import random
+from src.model.model import TraderState  # Waiting for model implementation to import this
 
 
-    """ [3] Execute a step for the agent """
+class TraderAgent(FixedAgent):
+    def __init__(self, unique_id, model, capital, strategy, win_rate):
+        super().__init__(unique_id, model)
+
+    
+        self.capital = capital
+        self.strategy = strategy  # Callable strategy function
+        self.win_rate = win_rate  # Float (0 to 1)
+        self.state = TraderState.HAS_CAPITAL if capital > 0 else TraderState.ZERO_CAPITAL
+
+    def trade_action(self, market_prices):
+        """
+        Executes a trade action based on strategy decision.
+        """
+        # Strategy decides Buy (True) or Sell (False)
+        decision = self.strategy(market_prices)
+
+        # Probabilistic trade outcome
+        trade_success = random() < self.win_rate
+        trade_amount = 10  # An example fixed trade size
+
+        if decision:  # Buy
+            self.capital += trade_amount if trade_success else -trade_amount
+        else:  # Sell
+            self.capital += trade_amount * 0.5 if trade_success else -trade_amount * 0.5
+
+        # Update state
+        self.state = TraderState.HAS_CAPITAL if self.capital > 0 else TraderState.ZERO_CAPITAL
+
+    def adjust_capital(self, amount):
+        """
+        Adjusts capital directly (e.g., for sharing mechanisms).
+        """
+        self.capital += amount
+        self.state = TraderState.HAS_CAPITAL if self.capital > 0 else TraderState.ZERO_CAPITAL
+
+    def get_capital(self):
+        return self.capital
+
+    def get_state(self):
+        return self.state
+
     def step(self):
-        """Agent makes a buy/sell decision based on their strategy to optimise their portfolio """
+        """
+        Step function called by scheduler each time step.
+        """
+        market_prices = self.model.market_prices  # Expect this to be provided by the model (?)
+        self.trade_action(market_prices)
 
-        # Random Strategy
-        if self.strategy.lower() == "random":
-            self.random_trade()
+        # A debug print (optional, can be commented out)
+        print(f"Agent {self.unique_id}: Capital = {self.capital}, State = {self.state}")
 
-        # SMA Strategy
-        elif self.strategy.lower() == "sma":
-            self.sma_trade()
-
-        # Machine Learning Strategy
-        elif self.strategy.lower() == "ml":
-            self.ml_trade()
-
-        # Updates Portfolio Value
-        
