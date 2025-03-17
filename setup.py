@@ -10,6 +10,10 @@ setup(
         "pandas",
         "openpyxl",
         "mesa",
-        "numpy"
+        "numpy",
+        "networkx",
+        "matplotlib",
+        "altair",
+        "solara"
     ],  # Add any dependencies here 
 )
