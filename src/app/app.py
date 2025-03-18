@@ -4,6 +4,10 @@
 
 # Importing Libraries 
 import numpy as np
+import pandas as pd
+import mplfinance  as mpf 
+
+
 ## Local Agent Library
 from mesa.examples.basic.boltzmann_wealth_model.model import BoltzmannWealth # Replace with our model
 from src.model import model as AgentPortfolioModel
@@ -31,41 +35,75 @@ custom_env = 1
 
 
 """[1] Gathering Data for Visualisation""" # -> Turn into a class
-# [1.1] Gathering Agent Capital Data
-def get_agent_capital(model):
-    # Testing [1]
-    if custom_env == 1:
-        wealth_list = []
-        for agent in model.agents:
-            wealth_list.append(agent.wealth)
+class GatheringData:
+    # [1.1] Initialising Variables
+    def __init__(self, model):
+        self.model = model
 
-        return wealth_list
-    
-    # Custom [0]
-    elif custom_env == 0:
-        capital_list = []
-        for agent in model.agents:
-            capital_list.append(agent.capital)
+    # [1.2] Gathering Agent Capital Data
+    def get_agent_capital(model):
+        # Testing [1]
+        if custom_env == 1:
+            wealth_list = []
+            for agent in model.agents:
+                wealth_list.append(agent.wealth)
 
-        return capital_list
+            return wealth_list
+        
+        # Custom [0]
+        elif custom_env == 0:
+            capital_list = []
+            for agent in model.agents:
+                capital_list.append(agent.capital)
 
-# [1.2] Gathering Asset Price Data
+            return capital_list
 
 
-# [1.3] Visual representation of Agent in the Simulation
-def agent_representation(agent): # WIP
-    """ 
-    A Colourmap will be used to translate an agent feature into colour. This could be
-    one of the following:
-    - Agent's portfolio (Capital)
-    - Agent's Capital State
-    - Agent's Wealth
+    # [1.3] Gathering Asset Price Data
+    def get_price_data(model):
+        # Testing [1]
+        """ CSV is only loaded for testing, will be taken from custom model where
+        it only needs to be imported once"""
+        if custom_env == 1:
+            try:
+                # Load CSV data
+                price_data = pd.read_csv("data/BTCUSDT_kline_1h_bt=180d.csv")
 
-    """
+                # Convert timestamp column to datetime format
+                price_data["timestamp"] = pd.to_datetime(price_data["timestamp"])
 
-    colour = agent.wealth # CHANGE FOR OUR AGENT
-    # colour = agent.capital  
-    return {"colour": colour}
+                # Set timestamp as index and rename it to "date" (required by mplfinance)
+                price_data.set_index("timestamp", inplace=True)
+                price_data.index.name = "date"  # This is what mplfinance requires
+
+                
+
+                # Return the price data as a DataFrame (filtered for the current timestep)
+                return price_data
+
+            except Exception as e:
+                print(f"Error loading price data: {e}")
+                return pd.DataFrame()  # Return an empty DataFrame if there's an error
+            
+        # Custom [0]
+        elif custom_env == 0:
+            return model.price_history[-1] # Latest
+
+
+    # [1.4] Visual representation of Agent in the Simulation
+    def agent_representation(agent): # WIP
+        """ 
+        A Colourmap will be used to translate an agent feature into colour. This could be
+        one of the following:
+        - Agent's portfolio (Capital)
+        - Agent's Capital State
+        - Agent's Wealth
+
+        """
+
+        colour = agent.wealth # CHANGE FOR OUR AGENT
+        # colour = agent.capital  
+        return {"colour": colour}
 
 
 # Model Parameters
@@ -90,7 +128,6 @@ model_params = {
 }
 
 
-""" Reprogram from here"""
 
 def post_process(ax):
     ax.get_figure().colorbar(ax.collections[0], label="Capital Value", ax=ax)
@@ -99,6 +136,7 @@ def post_process(ax):
 # Create initial model instance with Initial Paramters
 model = BoltzmannWealth(10, 10, 10)
 
+
 # Custom Model
 if custom_env == 0:
     model = AgentPortfolioModel(
@@ -106,7 +144,7 @@ if custom_env == 0:
         seed=1
     )
 
-""" [3] Create visualization """
+""" [3] Create Custom visualization """
 class visuals:
     # [3.1] Initialising Variables
     def __init__(self, model):
@@ -121,7 +159,7 @@ class visuals:
         # Initialise Figure
         fig = Figure()
         ax = fig.subplots()
-        capital_values = get_agent_capital(model)
+        capital_values = GatheringData.get_agent_capital(model)
         ax.hist(capital_values, bins=10, color='blue')
         
         # Labeling Chart and Axis
@@ -151,7 +189,7 @@ class visuals:
         ax = fig.subplots()
 
         # Get capital values for all agents at the current timestep
-        capital_values = get_agent_capital(model)
+        capital_values = GatheringData.get_agent_capital(model)
 
         # Ensure each agent has a history storage
         for agent_id in range(len(capital_values)):
@@ -178,32 +216,47 @@ class visuals:
         solara.FigureMatplotlib(fig)
 
 
+    # [3.4] Create Price Movement Chart
+    @solara.component
+    def PriceMovement(model):
+        # Update the agent counter
+        update_counter.get()
+
+        # Import Price data
+        if model.steps == 0:
+            price_data = GatheringData.get_price_data(model).iloc[[model.steps]]
+        else:
+            price_data = GatheringData.get_price_data(model).iloc[0:model.steps]
+
+        # Initialise Figure
+        fig, ax = mpf.plot(price_data, type='candle', returnfig=True) 
+
+        # Simulate
+        solara.FigureMatplotlib(fig)
 
 
 
-# SpaceGraph shows the spatial distribution of agents based on their portfolio values.
+""" [4] Create Standard Visualisations"""
+# [4.1] Space Graph
 SpaceGraph = make_space_component(
-    agent_representation, cmap="viridis", vmin=0, vmax=10, post_process=post_process
+    GatheringData.agent_representation, cmap="viridis", vmin=0, vmax=10, post_process=post_process
 )
-# PortfolioPlot shows how the distribution of portfolio values evolves over time.
-#PortfolioPlot = make_plot_component("Portfolio Distribution")
 
+
+# [4.2] Giniplot
 GiniPlot = make_plot_component("Gini")
 
+
+
+""" [5] Run App"""
 # Create the SolaraViz page to serve the interactive visualizations.e
 page = SolaraViz(
     model,
-    components=[visuals.CapitalHistogram, visuals.CapitalYield, SpaceGraph, GiniPlot],
+    components=[visuals.CapitalHistogram, visuals.CapitalYield, 
+                visuals.PriceMovement, SpaceGraph, GiniPlot],
     model_params=model_params,
     name="Agent Portfolio Optimisation",
 )
 page
-
-
-
-
-
-
-
 
 
