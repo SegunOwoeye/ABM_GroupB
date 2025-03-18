@@ -14,6 +14,8 @@ setup(
         "networkx",
         "matplotlib",
         "altair",
-        "solara"
+        "solara",
+        "mplfinance"
+
     ],  # Add any dependencies here 
 )
