@@ -88,6 +88,7 @@ class TraderNetwork(Model):
         """Advance simulation one step and generate a new price dynamically."""
         self.agents.shuffle_do("step")
         self.market_date += 1
+        print(self.market_date)
 
         # Generate the next price dynamically
         self.current_price = generate_new_price(self.current_price, volatility=self.volatility)

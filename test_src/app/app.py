@@ -11,7 +11,6 @@ import mplfinance  as mpf
 ## Local Agent Library
 from mesa.examples.basic.boltzmann_wealth_model.model import BoltzmannWealth # Replace with our model
 from test_src.model.model import TraderNetwork as AgentPortfolioModel
-from test_src.agent import trader as agentTrader
 
 ## Data Logging and Visualisation Libraries
 from mesa.mesa_logging import INFO, log_to_stderr
@@ -24,7 +23,6 @@ from mesa.visualization import (
 import solara
 from matplotlib.figure import Figure
 
-import inspect
 
 
 
@@ -94,7 +92,7 @@ class GatheringData:
 
 
     # [1.4] Visual representation of Agent in the Simulation
-    def agent_representation(agent): # WIP
+    def agent_representation(agent, size=500): # WIP
         """ 
         A Colourmap will be used to translate an agent feature into colour. This could be
         one of the following:
@@ -105,13 +103,18 @@ class GatheringData:
         """
         # Testing [1]
         if custom_env == 1:
-            colour = agent.wealth # CHANGE FOR OUR AGENT
+            color = agent.wealth # CHANGE FOR OUR AGENT
             # colour = agent.capital  
-            return {"colour": colour}
+            return {"color": color}
         
         # Custom [0]
         elif custom_env == 0:
-            return {"colour": agent.capital} 
+            if agent.capital > 0:
+                return {"color": agent.capital,
+                        "size": size} 
+            else:
+                return {"color": agent.capital,
+                        "size": size/2}
 
 # Model Parameters
 model_params = {
@@ -119,6 +122,21 @@ model_params = {
         "type": "InputText",
         "value": 1,
         "label": "Random Seed",
+    },
+
+    "start_price": {
+        "type": "InputText",
+        "value": 100,
+        "label": "Starting Price",
+    },
+    
+    "volatility": {
+        "type": "SliderInt",
+        "value": 0.01,
+        "label": "Volatility:",
+        "min": 0,
+        "max": 1,
+        "step": 0.005,
     },
 
     "num_nodes": {
@@ -142,8 +160,11 @@ model_params = {
 }
 
 
-
 def post_process(ax):
+    fig = ax.get_figure()
+    fig.set_size_inches(7.5, 5.5)
+    ax.set_xlim([-1.2, 1.2]) 
+    ax.set_ylim([-1.2, 1.2])
     ax.get_figure().colorbar(ax.collections[0], label="Capital Value", ax=ax)
 
 
@@ -194,7 +215,8 @@ class visuals:
         visuals.agent_capital_history, set_agent_capital_history = solara.use_state({})
 
         # Automatically reset agent_capital_history when model changes
-        solara.use_effect(lambda: set_agent_capital_history({}), [model])    
+        solara.use_effect(lambda: set_agent_capital_history({}) or set_reset_key(0), [model])
+  
 
         # Update the agent counter
         update_counter.get() 
@@ -218,14 +240,22 @@ class visuals:
 
         # Plot each agent's capital over time
         for agent_id, capital_series in visuals.agent_capital_history.items():
-            ax.plot(range(len(capital_series)), capital_series, linestyle="-", alpha=0.5)
+            x_axis_list = np.linspace(0, model.market_date, len(capital_series))
+            x_axis_list = list(x_axis_list)
+            
+
+            ax.plot(x_axis_list, capital_series, linestyle="-", alpha=0.5, label=f"Agent {int(agent_id+1)}")
 
 
         # Labeling Chart and Axis
         ax.set_title("Agent Capital Over Time")
-        ax.set_xlabel("Timesteps")
+        ax.set_xlabel("Unit Time")
         ax.set_ylabel("Capital")
+        ax.set_xlim(left=0) # X min is 0
         ax.grid(True, linestyle="-", alpha=0.3)
+
+        # Add a legend
+        ax.legend(title="Agents", loc="upper right", fontsize="small", bbox_to_anchor=(1, 1))
 
         # Show plot in Solara
         solara.FigureMatplotlib(fig)
@@ -257,9 +287,9 @@ class visuals:
             ax.plot(range(len(price_data)), price_data, linestyle="-", alpha=0.5)
 
             # Labeling Chart and Axis
-            ax.set_title("")
-            ax.set_xlabel("Time (Days)")
-            ax.set_ylabel("Commodity Price (USD)")
+            ax.set_title("Commodity Price Over Time")
+            ax.set_xlabel("Unit Time")
+            ax.set_ylabel("Commodity Price")
             ax.set_xlim(left=0) # X min is 0
         
 
@@ -271,22 +301,24 @@ class visuals:
 """ [4] Create Standard Visualisations"""
 # [4.1] Space Graph
 SpaceGraph = make_space_component(
-    GatheringData.agent_representation, cmap="viridis", vmin=0, vmax=10, post_process=post_process
+    GatheringData.agent_representation, cmap="viridis", vmin=0, vmax=model.price_history[0]*2, 
+    post_process=post_process,
+    
 )
 
-
-for name, param in inspect.signature(model.__class__.__init__).parameters.items():
-    print(f"Parameter: {name}, Default: {param.default}")
 
 
 """ [5] Run App"""
 # Create the SolaraViz page to serve the interactive visualizations.e
 page = SolaraViz(
     model,
-    components=[visuals.CapitalHistogram, visuals.CapitalYield, 
-                visuals.PriceMovement, SpaceGraph],
+    components=[visuals.PriceMovement, visuals.CapitalYield, 
+                visuals.CapitalHistogram, SpaceGraph],
     model_params=model_params,
     name="Agent Portfolio Optimisation",
+    layout="column",  # Arrange components in a column
+    gap="large",  # Adds spacing between components
+    css_style={"padding": "100px", "width": "90%"} 
 )
 page
 
