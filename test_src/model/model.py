@@ -19,10 +19,10 @@ def generate_new_price(previous_price, volatility=0.01, drift=0):
     sqrt_dt = np.sqrt(dt)
     random_return = np.random.normal(loc=0, scale=sqrt_dt)  # Random return
 
-    # Apply Geometric Brownian Motion formula for a single step
+    # Applying Geometric Brownian Motion formula for a single step
     new_price = previous_price * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility * random_return)
 
-    return float(new_price)  # Ensure a scalar float value
+    return float(new_price) 
 
 
 
@@ -55,9 +55,6 @@ class TraderNetwork(Model):
         self.volatility = volatility
         self.market_date = 0
         self.price_history = [self.current_price]  # Maintain full price history
-
-        # Debugging - Initial Price
-        print(f"Initialized TraderNetwork with starting price {self.current_price}")
 
         # Create the network space and store it in the grid attribute of the Trader model class
         network_space = NetworkSpace(num_nodes, avg_node_degree, self.random)
@@ -98,13 +95,9 @@ class TraderNetwork(Model):
         # Append to history for tracking
         self.price_history.append(self.current_price)
 
-        # Debugging - Show evolving prices
-        print(f"Step {self.market_date} - New Price: {self.current_price}, Type: {type(self.current_price)}")
-        print(f"Step {self.market_date} - Price History: {self.price_history[-5:]}")  # Show last 5 prices
-
         # Update agents
-        self.agents.set("price_memory", self.current_price)  # ✅ Scalar
-        self.agents.set("market_prices", self.price_history)  # ✅ List
+        self.agents.set("price_memory", self.current_price)  # number
+        self.agents.set("market_prices", self.price_history)  # List
 
         # Collect data
         self.datacollector.collect(self)
@@ -120,8 +113,3 @@ for _ in range(4):
     test_model.step()
     print(f"Time {_}: Grid = {test_model.grid}")
     print()"""
-
-
-
-
-#print(generate_prices(100, 100, 0.01))
