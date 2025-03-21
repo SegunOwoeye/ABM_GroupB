@@ -29,6 +29,11 @@ class TraderAgent(FixedAgent):
         """
         Executes a trade action based on strategy decision.
         """
+        # Prevent agent from trading if out of capital
+        if self.state == TraderState.ZERO_CAPITAL:
+            return
+
+
         # Strategy decides Buy (True) or Sell (False)
         decision = self.strategy(self.price_memory)
 
@@ -105,6 +110,12 @@ class TraderAgent(FixedAgent):
         """
         Step function called by scheduler each time step.
         """  
+        # Skip step if agent has zero capital
+        if self.state == TraderState.ZERO_CAPITAL:
+            # A debug print (optional, can be commented out)
+            print(f"Agent {self.unique_id} is out of capital and has stopped trading.")
+            return
+
         self.trade_action()
 
         if self.state is TraderState.HAS_CAPITAL:
