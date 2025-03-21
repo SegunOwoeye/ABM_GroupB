@@ -74,16 +74,56 @@ class TraderNetwork(Model):
         )
 
         # Create Trader Agents
-        TraderAgent.create_agents(
-            self,
-            num_nodes,
-            100,
-            trader_strategy,
-            0.01,
-            self.price_history,  # Pass history
-            0.5,
-            list(self.grid.all_cells),
+        random_agent = TraderAgent.create_agents(
+            model = self,
+            n = num_nodes,
+            capital = 100,
+            win_rate = 0.01,
+            market_prices = self.price_history,  # Pass history
+            generocity_rate = 0.5,
+            cell = list(self.grid.all_cells),
+            strategy_type = "random",
+            
         )
+
+        """rsi_agent = TraderAgent.create_agents(
+            model = self,
+            n = num_nodes,
+            capital = 100,
+            win_rate = 0.01,
+            market_prices = self.price_history,  # Pass history
+            generocity_rate = 0.5,
+            cell = list(self.grid.all_cells),
+            strategy_type = "rsi",
+            strategy_params = {"period": 14, "lower_threshold": 30, "upper_threshold": 70}
+        )"""
+
+        """sma_agent = TraderAgent.create_agents(
+            model = self,
+            n = num_nodes,
+            capital = 100,
+            win_rate = 0.01,
+            market_prices = self.price_history,  # Pass history
+            generocity_rate = 0.5,
+            cell = list(self.grid.all_cells),
+            strategy_type = "sma",
+            strategy_params = {"period": 28}
+        )"""
+
+        """bollinger_agent = TraderAgent.create_agents(
+            model = self,
+            n = num_nodes,
+            capital = 100,
+            win_rate = 0.01,
+            market_prices = self.price_history,  # Pass history
+            generocity_rate = 0.5,
+            cell = list(self.grid.all_cells),
+            strategy_type = "bollinger",
+            strategy_params = {"period": 21, "num_std_dev": 2}
+        )"""
+
+
+
 
         self.running = True
         self.datacollector.collect(self)

@@ -1,6 +1,7 @@
 from mesa.discrete_space import FixedAgent
 import random
 from enum import Enum
+import numpy as np
 
 
 # State class to indicate the state of each trader agent. "Broke" or "with some money".
@@ -8,16 +9,99 @@ class TraderState(Enum):
     ZERO_CAPITAL = 0
     HAS_CAPITAL = 1
 
-# Very basic strategy that just randomly chooses True (Buy Signal) or False (Sell Signal)
-def trader_strategy(price: float):
+""" Trade Strategies"""
+# Random Strategy
+def random_strategy():
+    # randomly chooses True (Buy Signal) or False (Sell Signal)
     return random.choice([True, False])
+
+# RSI Strategy
+def rsi_strategy(prices, period=14, lower_threshold=30, upper_threshold=70):
+    # Checks to see if there is enough data to compute RSI
+    if len(prices) < period + 1:
+        return None 
+
+    deltas = np.diff(prices[-(period+1):])
+    gains = np.where(deltas > 0, deltas, 0)
+    losses = np.where(deltas < 0, -deltas, 0)
+
+    avg_gain = np.mean(gains)
+    avg_loss = np.mean(losses)
+
+    if avg_loss == 0:
+        rsi = 100
+    else:
+        rs = avg_gain / avg_loss
+        rsi = 100 - (100 / (1 + rs))
+    
+    # Signals
+    if rsi < lower_threshold:
+        return True  # Buy
+    elif rsi > upper_threshold:
+        return False  # Sell
+    else:
+        return None  # Hold
+
+
+# SMA Strategy
+def sma_strategy(prices, period=28):
+    # Checks to see if there is enough data to compute SMA
+    if len(prices) < period + 1:
+        return None  
+
+    sma = np.mean(prices[-(period+1):-1])  # Compute SMA from previous N prices
+    current_price = prices[-1]
+    
+    # Signals
+    if current_price > sma:
+        return True  # Buy
+    elif current_price < sma:
+        return False  # Sell
+    else:
+        return None  # Hold
+
+# Bollinger Band Strategy -> Mean Reverting
+def bollinger_strategy(prices, period=20, num_std_dev=2):
+    # Checks to see if there is enough data to compute Bollinger Bands
+    if len(prices) < period:
+        return None  
+
+    recent_prices = prices[-period:]
+    sma = np.mean(recent_prices)
+    std = np.std(recent_prices)
+
+    upper_band = sma + num_std_dev * std
+    lower_band = sma - num_std_dev * std
+    current_price = prices[-1]
+    
+    # Signal
+    if current_price < lower_band:
+        return True  # Buy
+    elif current_price > upper_band:
+        return False  # Sell
+    else:
+        return None  # Hold
+
+
+
+# Strategy Selector
+def trader_strategy(price_history=None, strategy_type="random", **kwargs):
+    if strategy_type == "random":
+        return random_strategy()
+    elif strategy_type == "rsi":
+        return rsi_strategy(price_history, **kwargs)
+    elif strategy_type == "sma":
+        return sma_strategy(price_history, **kwargs)
+    elif strategy_type == "bollinger":
+        return bollinger_strategy(price_history, **kwargs)
 
 
 class TraderAgent(FixedAgent):
-    def __init__(self, model, capital, strategy, win_rate, market_prices, generocity_rate, cell):
+    def __init__(self, model, capital, strategy_type, win_rate, market_prices, generocity_rate, cell, strategy_params=None):
         super().__init__(model)
         self.capital = capital
-        self.strategy = strategy  # Callable strategy function
+        self.strategy_type = strategy_type  # Callable strategy function
+        self.strategy_params = strategy_params or {}
         self.win_rate = win_rate  # Float (0 to 1)
         self.market_prices = market_prices
         self.price_memory = self.market_prices[0]
@@ -35,7 +119,11 @@ class TraderAgent(FixedAgent):
 
 
         # Strategy decides Buy (True) or Sell (False)
-        decision = self.strategy(self.price_memory)
+        decision = trader_strategy(self.market_prices, self.strategy_type, **self.strategy_params)
+        
+        # Hold - no action
+        if decision is None:
+            return  
 
         index = 0
         continue_flag = True
