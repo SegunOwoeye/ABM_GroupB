@@ -166,6 +166,13 @@ def post_process(ax):
     ax.set_xlim([-1.2, 1.2]) 
     ax.set_ylim([-1.2, 1.2])
     ax.get_figure().colorbar(ax.collections[0], label="Capital Value", ax=ax)
+    
+    # Manually add labels to nodes
+    for collection in ax.collections: 
+        offsets = collection.get_offsets()
+        if offsets is not None:
+            for i, (x, y) in enumerate(offsets):
+                ax.text(x, y, f"A{i+1}", fontsize=9, ha="center", va="center", color="white", fontweight="bold")
 
 
 # Create initial model instance with Initial Paramters
@@ -196,7 +203,7 @@ class visuals:
         fig = Figure()
         ax = fig.subplots()
         capital_values = GatheringData.get_agent_capital(model)
-        ax.hist(capital_values, bins=10, color='blue')
+        ax.hist(capital_values, bins=10, color='green')
         
         # Labeling Chart and Axis
         ax.set_title("Agent Capital Histogram")
@@ -255,7 +262,7 @@ class visuals:
         ax.grid(True, linestyle="-", alpha=0.3)
 
         # Add a legend
-        ax.legend(title="Agents", loc="upper right", fontsize="small", bbox_to_anchor=(1, 1))
+        ax.legend(title="Agents", loc="upper left", fontsize="5.5", bbox_to_anchor=(1.0, 1.15))
 
         # Show plot in Solara
         solara.FigureMatplotlib(fig)
