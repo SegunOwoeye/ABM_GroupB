@@ -23,7 +23,7 @@ class TraderAgent(FixedAgent):
         self.price_memory = self.market_prices[0]
         self.generocity_rate = generocity_rate
         self.cell = cell
-        self.state = TraderState.HAS_CAPITAL if capital > 0 else TraderState.ZERO_CAPITAL
+        self.state = TraderState.HAS_CAPITAL if round(capital) >= 0 else TraderState.ZERO_CAPITAL
 
     def trade_action(self):
         """
