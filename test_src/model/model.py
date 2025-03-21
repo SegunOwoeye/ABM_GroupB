@@ -13,11 +13,16 @@ from test_src.agent.trader import (
 )
 
 # Helper function to generate random prices that follow a geometric brownian motion
-def generate_new_price(previous_price, volatility=0.01, drift=0):
+def generate_new_price(previous_price, volatility=0.01, drift=0, rng=None):
     """Generate the next price using a Geometric Brownian Motion step."""
     dt = 1 / 252  # Assume 252 trading days
     sqrt_dt = np.sqrt(dt)
-    random_return = np.random.normal(loc=0, scale=sqrt_dt)  # Random return
+    
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # Use a seeded random generator if a seed is provided
+    random_return = rng.normal(loc=0, scale=sqrt_dt)  # Seeded random return
 
     # Applying Geometric Brownian Motion formula for a single step
     new_price = previous_price * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility * random_return)
@@ -88,10 +93,10 @@ class TraderNetwork(Model):
         """Advance simulation one step and generate a new price dynamically."""
         self.agents.shuffle_do("step")
         self.market_date += 1
-        print(self.market_date)
+        #print(self.market_date)
 
         # Generate the next price dynamically
-        self.current_price = generate_new_price(self.current_price, volatility=self.volatility)
+        self.current_price = generate_new_price(self.current_price, volatility=self.volatility, rng=self.rng)
 
         # Append to history for tracking
         self.price_history.append(self.current_price)
