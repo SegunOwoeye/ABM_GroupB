@@ -60,6 +60,8 @@ class TraderNetwork(Model):
         self.volatility = volatility
         self.market_date = 0
         self.price_history = [self.current_price]  # Maintain full price history
+        self.rng = np.random.default_rng(int(seed))
+        
 
         # Create the network space and store it in the grid attribute of the Trader model class
         network_space = NetworkSpace(num_nodes, avg_node_degree, self.random)
@@ -83,6 +85,7 @@ class TraderNetwork(Model):
             generocity_rate = 0.5,
             cell = list(self.grid.all_cells),
             strategy_type = "random",
+            strategy_params = {"model": self}
             
         )
 
@@ -147,6 +150,7 @@ class TraderNetwork(Model):
 
         # Collect data
         self.datacollector.collect(self)
+        print(self.rng)
 
 
 

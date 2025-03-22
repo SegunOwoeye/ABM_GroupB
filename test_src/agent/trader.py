@@ -11,9 +11,9 @@ class TraderState(Enum):
 
 """ Trade Strategies"""
 # Random Strategy
-def random_strategy():
+def random_strategy(model):
     # randomly chooses True (Buy Signal) or False (Sell Signal)
-    return random.choice([True, False])
+    return model.random.choice([True, False])
 
 # RSI Strategy
 def rsi_strategy(prices, period=14, lower_threshold=30, upper_threshold=70):
@@ -87,7 +87,7 @@ def bollinger_strategy(prices, period=20, num_std_dev=2):
 # Strategy Selector
 def trader_strategy(price_history=None, strategy_type="random", **kwargs):
     if strategy_type == "random":
-        return random_strategy()
+        return random_strategy(**kwargs)
     elif strategy_type == "rsi":
         return rsi_strategy(price_history, **kwargs)
     elif strategy_type == "sma":

@@ -122,6 +122,7 @@ model_params = {
         "type": "InputText",
         "value": 1,
         "label": "Random Seed",
+        "on_change": lambda value: int(value)
     },
 
     "start_price": {
