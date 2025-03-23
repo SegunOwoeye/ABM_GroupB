@@ -52,6 +52,7 @@ class TraderNetwork(Model):
         avg_node_degree=3,
         start_price=100,  # Use a single starting price instead of a full array
         volatility=0.01,
+        generocity_rate = 0.5,
         seed=None,
     ):
         super().__init__(seed=seed)
@@ -82,7 +83,7 @@ class TraderNetwork(Model):
             capital = 100,
             win_rate = 0.01,
             market_prices = self.price_history,  # Pass history
-            generocity_rate = 0.5,
+            generocity_rate = generocity_rate,
             cell = list(self.grid.all_cells),
             strategy_type = "random",
             strategy_params = {"model": self}
