@@ -140,6 +140,15 @@ model_params = {
         "step": 0.005,
     },
 
+    "generocity_rate": {
+        "type": "SliderInt",
+        "value": 0.5,
+        "label": "Generocity Rate:",
+        "min": 0,
+        "max": 1,
+        "step": 0.005,
+    },
+
     "num_nodes": {
         "type": "SliderInt",
         "value": 3,
