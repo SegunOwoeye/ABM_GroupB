@@ -14,9 +14,6 @@ This repository contains the agent-based model (ABM) developed for the 7CCSMAMF 
 - **`data/`**  
   Contains input datasets and output results from simulation runs.
 
-- **`docs/`**  
-  Project documentation, including the final report and presentation materials.
-
 ## Getting Started
 
 1. **Clone the repository:**
