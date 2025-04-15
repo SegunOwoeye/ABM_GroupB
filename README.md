@@ -23,20 +23,13 @@ This repository contains the agent-based model (ABM) developed for the 7CCSMAMF 
    cd ABM_GroupB/test_src
    ```
 
-2. **Install dependencies:**
 
-   Ensure you have Python 3.8+ installed. Then, install required packages:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run simulations:**
+2. **Run simulations:**
 
    Execute the main simulation script:
 
    ```bash 
-   "solara run test_src/app/app.py"
+   solara run test_src/app/app.py
    ```
 
 
