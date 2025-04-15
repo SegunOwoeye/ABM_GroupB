@@ -1,6 +1,6 @@
 # Created in Mesa 3.2.0.dev0| Python 3.13.2
 
-# Run by Typing "solara run src/app/app.py" into the terminal
+# Run by Typing "solara run test_src/app/app.py" into the terminal
 
 # Importing Libraries 
 import numpy as np
